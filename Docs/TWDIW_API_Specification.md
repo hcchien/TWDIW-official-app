@@ -1,13 +1,15 @@
 # 數位憑證皮夾系統API介接規格資料
 
-最新版本：1.0  
+最新版本：1.2.1  
 數位憑證皮夾建置團隊： [service@wallet.gov.tw](mailto:service@wallet.gov.tw)  
 最後修訂日期 : 2025/12/23
 
 | 文件版本 | 修訂日期 | 修訂內容 |
 | :---- | :---- | :---- |
 | 1.0 | 2025/10/16 | 初版 |
-| 1.0.1 | 2025/12/23 | 調整 App 下載 QRCode 與輔助說明文字 |
+| 1.1 | 2025/11/12 | 1. DWVC-301 API：當 HTTP Status = 4xx 時，Response 新增 credentialStatus 欄位。 <br> 2. DWVC-301 API：新增錯誤代碼 30203～30207。 <br> 3. DWVC-302 API：調整 Response 規格，於 cids 結構中新增 credentialStatus 欄位。  |
+| 1.2 | 2025/12/12 | 1. DWVC-101、DWVC-201、DWVP-01-101、DWVP-01-201 API：調整 HTTP Status 4xx 代碼表。 <br> 2. DWVC-101 API：文件修正 HTTP Status。 <br> 3. DWVC-202、DWVC-203 API：文件修正 issuanceDate、expirationDate 日期格式說明。 <br> 4. DWVC-203、DWVC-302、DWVP-01-201 API：新增每筆元素欄位敘述說明。 <br> 5. DWVP-01-201 API：文件修正 Response 新增 holder_did。 <br> 6. DWVP-01-101、DWVP-01-201 API：文件修正 Response 移除 code、message。  |
+| 1.2.1 | 2025/12/23 | 調整 App 下載 QRCode 與輔助說明文字 |
 
 ## 目錄
 
@@ -224,7 +226,7 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 | warnings.statusRevoke | 已經是撤銷狀態的卡片清單。 |
 | warnings.cidNotFound | 系統內不存在的卡片清單。 |
 
-**HTTP Status = 201 範例**
+**HTTP Status = 200 範例**
 
 ```json
 {
@@ -256,7 +258,7 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 
 | Status Code | Status Code描述 |
 | ---- | ----- |
-| 201 | 請求成功 |
+| 200 | 請求成功 |
 | 4xx | 請求參數錯誤，請參考錯誤代碼說明 |
 | 500 | 伺服器內部錯誤，請聯絡客服人員處理 |
 
@@ -264,6 +266,12 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 
 | code | message |
 | ---- | ----- |
+| 10108 | 查無模板資料 |
+| 10109 | 日期格式不合法(YYYYMMDD) |
+| 10110 | 限定資料格式檢核之錯誤訊息 |
+| 10112 | VC 模版欄位定義的欄位在資料中不存在 |
+| 10113 | 發行日不可以是未來時間 |
+| 10114 | 到期日不可以早於今日或建立 VC 模板日期 |
 | 11001 | 缺少參數或參數不合法 |
 | 11002 | 使用者未經過身分認證 |
 | 11003 | ID_token格式不正確 |
@@ -359,6 +367,7 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 | code | message |
 | ---- | ----- |
 | 11001 | 交易序號不存在 |
+| 20102 | 查無 VC 資料 |
 | 61010 | 指定VC不存在，QR Code尚未被掃描 |
 | 61011 | 查詢VC錯誤 |
 | 61012 | 不合法的交易序號 |
@@ -406,8 +415,8 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 
 - `cid`：VC 卡片唯一識別碼。
 - `vcUid`：VC 模板代碼。
-- `issuanceDate`：發行時間（ISO 8601 字串）。
-- `expirationDate`：到期時間（ISO 8601 字串）。
+- `issuanceDate`：發行時間（yyyy-MM-dd HH:mm:ss）。
+- `expirationDate`：到期時間（yyyy-MM-dd HH:mm:ss）。
 - `credentialStatus`：卡片狀態（`0` 有效、`1` 停用、`2` 撤銷）。
 
 **HTTP Status = 200 範例**
@@ -419,8 +428,8 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
     {
       "cid": "8a454545-8bd0-45be-ba55-d5ed275f08aa",
       "vcUid": "12121212_test_20250905_vc",
-      "issuanceDate": "2025-09-05T11:44:56Z",
-      "expirationDate": "2026-09-05T11:44:56Z",
+      "issuanceDate": "2025-09-05 11:44:56",
+      "expirationDate": "2026-09-05 11:44:56",
       "credentialStatus": "0"
     }
   ]
@@ -500,6 +509,15 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 | ---- | ----- |
 | vcList | 符合條件的 VC 卡片清單，欄位結構與 DWVC-202 回傳的 `vcList` 相同，但增加一個傳入的dataTag欄位，來確認傳入的dataTag值。|
 
+`vcList` 每筆元素欄位：
+
+- `dataTag`：資料標註。
+- `cid`：VC 卡片唯一識別碼。
+- `vcUid`：VC 模板代碼。
+- `issuanceDate`：發行時間（yyyy-MM-dd HH:mm:ss）。
+- `expirationDate`：到期時間（yyyy-MM-dd HH:mm:ss）。
+- `credentialStatus`：卡片狀態（`0` 有效、`1` 停用、`2` 撤銷）。
+
 **HTTP Status = 200 範例**
 
 ```json
@@ -509,8 +527,8 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
       "dataTag": "8e4fad461737cd9fb7fdaf9cfff075d080cc86ceb62a67b2c55cec53a52dc453",
       "cid": "8a454545-8bd0-45be-ba55-d5ed275f08aa",
       "vcUid": "12121212_test_20250905_vc",
-      "issuanceDate": "2025-09-05T11:44:56Z",
-      "expirationDate": "2026-09-05T11:44:56Z",
+      "issuanceDate": "2025-09-05 11:44:56",
+      "expirationDate": "2026-09-05 11:44:56",
       "credentialStatus": "0"
     }
   ]
@@ -589,10 +607,12 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 
 **HTTP Status = 4xx 範例**
 
+備註：若錯誤代碼為 30203、30204、61006、61010、61050、69004，其對應之 credentialStatus 會為 null。
 ```json
 {
-  "code": "61006",
-  "message": "不合法的VC識別碼"
+  "code": "61007",
+  "message": "VC撤銷錯誤",
+  "credentialStatus": "ACTIVE"
 }
 ```
 
@@ -608,6 +628,11 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 
 | code | message |
 | ---- | ----- |
+| 30203 | 欄位檢核有誤：不合法的操作類型 |
+| 30204 | 您無權限變更此 VC 卡片狀態 |
+| 30205 | 已撤銷憑證無法停用、復用 |
+| 30206 | 已啟用憑證無法再次復用 |
+| 30207 | 已停用憑證無法再次停用 |
 | 61006 | 不合法的 VC 識別碼 |
 | 61007 | VC撤銷錯誤 |
 | 61008 | 推播通知錯誤 |
@@ -685,22 +710,46 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 | success | 成功執行的 `cid` 陣列。 |
 | fail | 失敗清單，為物件陣列，包含 `code`、`message` 與 `cids` 欄位。 |
 
+`fail` 每筆元素欄位：
+
+- `code`：錯誤代碼。
+- `message`：錯誤訊息。
+- `cids`：VC 卡片唯一識別碼陣列。
+
+`cids` 每筆元素欄位：
+
+- `cid`：VC 卡片唯一識別碼。
+- `credentialStatus`：卡片狀態（`REVOKED` 撤銷、`SUSPENDED` 停用、`ACTIVE` 正常）。
+
 **HTTP Status = 200 範例**
 
+備註：當回傳結果為 fail 時，若錯誤代碼為 30204、61006、61010、61050、69004，其對應之 credentialStatus 會為 null。
 ```json
 {
-  "action": "revocation",
+  "action": "suspension",
   "success": [
-    "a16187e9-755e-48ca-a9c0-622f76fe1360",
-    "a16187e9-755e-48ca-a9c0-622f76fe1361",
-    "a16187e9-755e-48ca-a9c0-622f76fe1362"
+    "704f04ef-7adb-4c39-bc09-3564e9226eb0",
+    "0519a054-3cda-4367-98d1-fc642dde9d66"
   ],
   "fail": [
     {
       "code": "30205",
       "message": "已撤銷憑證無法停用、復用",
       "cids": [
-        "a16187e9-755e-48ca-a9c0-622f76fe1363"
+        {
+          "cid": "54d6b3ea-5d45-4bb6-bda7-b28942435b90",
+          "credentialStatus": "REVOKED"
+        }
+      ]
+    },
+    {
+      "code": "61010",
+      "message": "credential not found",
+      "cids": [
+        {
+          "cid": "79a257a3-2ac5-47f8-ac9d-86030887596",
+          "credentialStatus": null
+        }
       ]
     }
   ]
@@ -709,6 +758,8 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 
 **HTTP Status = 4xx 範例**
 
+備註：當錯誤代碼為 30201、30202、30203 時，API 會直接回傳 HTTP 4xx 錯誤；
+其他錯誤代碼則會以 HTTP 200 回傳，並顯示於回應物件中的 fail 區段。
 ```json
 {
   "code": "30203",
@@ -831,8 +882,6 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 | transactionId | 與請求相同的交易序號，供後續查詢使用。 |
 | qrcodeImage | 可直接在前端顯示的 QR Code Base64 圖片。 |
 | authUri | Deep Link（`openid4vp://`），可導向數位憑證皮夾APP。 |
-| code | 執行結果代碼。 |
-| message | 執行結果訊息。 |
 
 **HTTP Status = 200 範例**
 
@@ -840,9 +889,7 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 {
   "transactionId": "129e6f5d-6e2a-4e9b-99e8-8ded5f2886c6",
   "qrcodeImage": "data:image/png;base64,iVBORw0K….",
-  "authUri": "modadigitalwallet://authorize?client_id=redirec.....",
-  "code": "0",
-  "message": "SUCCESS"
+  "authUri": "modadigitalwallet://authorize?client_id=redirec....."
 }
 ```
 
@@ -872,6 +919,12 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 | 4001 | 輸入參數錯誤 |
 | 5001 | 資料庫異常 |
 | 5003 | QR Code編碼異常 |
+| 10101 | 欄位檢核有誤：ref 格式錯誤 |
+| 10102 | 查無模板資料 |
+| 10103 | 查無 domain-uri |
+| 10104 | 產生 Qr Code 失敗 |
+| 10105 | 欄位檢核有誤：ref 為必填 |
+| 10106 | 欄位檢核有誤：transactionId 為必填 |
 
 #### 2. DWVP-01-201-驗證端查詢VP展示驗證結果
 
@@ -911,19 +964,28 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 
 | 回傳值名稱 | 回傳值說明 |
 | ---- | ----- |
-| code | 執行結果代碼。 |
-| message | 執行結果訊息。 |
+| holder_did | 持證者 DID。 |
 | verifyResult | 驗證是否通過，布林值。 |
 | resultDescription | 驗證結果描述。 |
 | transactionId | 與請求相同的交易序號。 |
 | data | 民眾揭露的 VP 資料，為陣列，每筆包含 `credentialType` 與 `claims`。 |
 
+`data` 每筆元素欄位：
+
+- `credentialType`：憑證類型識別碼。
+- `claims`：憑證中的聲明資料陣列。
+
+`claims` 每筆元素欄位：
+
+- `ename`：聲明的英文名稱。
+- `cname`：聲明的中文名稱。
+- `value`：聲明的實際值。
+
 **HTTP Status = 200 範例**
 
 ```json
 {
-  "code": "0",
-  "message": "SUCCESS",
+  "holder_did": "did:key:abcd1234",
   "verifyResult": true,
   "resultDescription": "success",
   "transactionId": "129e6f5d-6e2a-4e9b-99e8-8ded5f2886c6",
@@ -965,6 +1027,7 @@ Verifiable Presentation（VP）是由持有端（Holder）基於一張或多張 
 | ---- | ----- |
 | 4002 | 查無驗證結果 |
 | 5001 | 資料庫異常 |
+| 20101 | 查詢驗證結果失敗 |
 
 <a id="dwvp-02-overview"></a>
 ### 三、DWVP-02：由手機端掃描靜態QRCode之情境流程
