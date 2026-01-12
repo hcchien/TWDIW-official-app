@@ -119,7 +119,7 @@ class Utils {
         // 僅保留包含指定欄位的部分
         for (var field in fields) {
           if (decoded.contains(field)) {
-            result += part + '~';
+            result += '$part~';
             continue;
           }
         }

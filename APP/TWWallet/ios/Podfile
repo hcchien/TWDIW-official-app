@@ -1,0 +1,75 @@
+# Platform for TW Digital Wallet
+platform :ios, '26.0'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks! :linkage => :dynamic
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      # Ensure module maps are properly configured
+      config.build_settings['DEFINES_MODULE'] = 'YES'
+      config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+      config.build_settings['SWIFT_VERSION'] = '5.0'
+    end
+  end
+  
+  # Fix GeneratedPluginRegistrant.m to use direct imports instead of @import
+  registrant_file = File.join(File.dirname(__FILE__), 'Runner', 'GeneratedPluginRegistrant.m')
+  if File.exist?(registrant_file)
+    content = File.read(registrant_file)
+    
+    # Replace @import statements with multi-line fallback imports
+    replacements = {
+      /#if __has_include\(<flutter_secure_storage\/FlutterSecureStoragePlugin\.h>\)\s*\n#import <flutter_secure_storage\/FlutterSecureStoragePlugin\.h>\s*\n#else\s*\n@import flutter_secure_storage;\s*\n#endif/ => 
+        "#if __has_include(<flutter_secure_storage/FlutterSecureStoragePlugin.h>)\n#import <flutter_secure_storage/FlutterSecureStoragePlugin.h>\n#elif __has_include(\"FlutterSecureStoragePlugin.h\")\n#import \"FlutterSecureStoragePlugin.h\"\n#else\n#import \"../.symlinks/plugins/flutter_secure_storage/ios/Classes/FlutterSecureStoragePlugin.h\"\n#endif",
+      /#if __has_include\(<local_auth_darwin\/LocalAuthPlugin\.h>\)\s*\n#import <local_auth_darwin\/LocalAuthPlugin\.h>\s*\n#else\s*\n@import local_auth_darwin;\s*\n#endif/ => 
+        "#if __has_include(<local_auth_darwin/LocalAuthPlugin.h>)\n#import <local_auth_darwin/LocalAuthPlugin.h>\n#elif __has_include(\"LocalAuthPlugin.h\")\n#import \"LocalAuthPlugin.h\"\n#else\n#import \"../.symlinks/plugins/local_auth_darwin/darwin/Classes/LocalAuthPlugin.h\"\n#endif",
+      /#if __has_include\(<mobile_scanner\/MobileScannerPlugin\.h>\)\s*\n#import <mobile_scanner\/MobileScannerPlugin\.h>\s*\n#else\s*\n@import mobile_scanner;\s*\n#endif/ => 
+        "#if __has_include(<mobile_scanner/MobileScannerPlugin.h>)\n#import <mobile_scanner/MobileScannerPlugin.h>\n#elif __has_include(\"MobileScannerPlugin.h\")\n#import \"MobileScannerPlugin.h\"\n#else\n#import \"../.symlinks/plugins/mobile_scanner/ios/Classes/MobileScannerPlugin.h\"\n#endif",
+      /#if __has_include\(<nfc_manager\/NfcManagerPlugin\.h>\)\s*\n#import <nfc_manager\/NfcManagerPlugin\.h>\s*\n#else\s*\n@import nfc_manager;\s*\n#endif/ => 
+        "#if __has_include(<nfc_manager/NfcManagerPlugin.h>)\n#import <nfc_manager/NfcManagerPlugin.h>\n#elif __has_include(\"NfcManagerPlugin.h\")\n#import \"NfcManagerPlugin.h\"\n#else\n#import \"../.symlinks/plugins/nfc_manager/ios/Classes/NfcManagerPlugin.h\"\n#endif",
+      /#if __has_include\(<path_provider_foundation\/PathProviderPlugin\.h>\)\s*\n#import <path_provider_foundation\/PathProviderPlugin\.h>\s*\n#else\s*\n@import path_provider_foundation;\s*\n#endif/ => 
+        "#if __has_include(<path_provider_foundation/PathProviderPlugin.h>)\n#import <path_provider_foundation/PathProviderPlugin.h>\n#elif __has_include(\"PathProviderPlugin.h\")\n#import \"PathProviderPlugin.h\"\n#else\n#import \"../.symlinks/plugins/path_provider_foundation/darwin/Classes/PathProviderPlugin.h\"\n#endif"
+    }
+    
+    replacements.each do |pattern, replacement|
+      content.gsub!(pattern, replacement)
+    end
+    
+    File.write(registrant_file, content) if content.include?('@import')
+  end
+end

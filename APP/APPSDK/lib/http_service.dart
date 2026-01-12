@@ -75,9 +75,9 @@ class HttpService {
       final data = json.decode(response.body);
       if (response.statusCode == 200) {
         final accessToken = data['access_token'];
-        final c_nonce = data['c_nonce'];
+        final cNonce = data['c_nonce'];
 
-        return {'access_token': accessToken, 'c_nonce': c_nonce};
+        return {'access_token': accessToken, 'c_nonce': cNonce};
       } else {
         if (data['resp_code'] != null) {
           return {'error': data['resp_code']};
