@@ -1,5 +1,6 @@
 # Build outputs
 APP/APPSDK/output/
+**/build/
 
 # IDE
 .idea/
