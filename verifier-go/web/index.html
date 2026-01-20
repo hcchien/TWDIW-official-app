@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taiwan Digital Wallet - API Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .warning strong {
+            color: #856404;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+        }
+
+        .tab.active {
+            background: white;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .response h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .response pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .error {
+            border-left-color: #dc3545;
+        }
+
+        .error pre {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .success {
+            border-left-color: #28a745;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ Taiwan Digital Wallet API</h1>
+            <p class="subtitle">Test Interface for Verifier & Issuer Services (Go Implementation)</p>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Warning:</strong> This is a test interface for the framework/skeleton implementation.
+            Cryptographic operations are NOT implemented. Do NOT use in production.
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab(event, 'issuer')">Credential Issuer</button>
+            <button class="tab" onclick="switchTab(event, 'verifier')">VP Verifier</button>
+            <button class="tab" onclick="switchTab(event, 'oidvp')">OID4VP</button>
+        </div>
+
+        <!-- Issuer Tab -->
+        <div id="issuer" class="tab-content active">
+            <h2>Credential Issuance</h2>
+
+            <div class="info-box">
+                <strong>Note:</strong> JWT signing is not implemented. The API returns placeholder JWTs.
+            </div>
+
+            <div class="form-group">
+                <label>Credential Type:</label>
+                <input type="text" id="credentialType" value="IdentityCredential" placeholder="e.g., IdentityCredential">
+            </div>
+
+            <div class="form-group">
+                <label>Credential Subject (JSON):</label>
+                <textarea id="credentialSubject" placeholder='{"name": "John Doe", "age": 30}'>{
+  "name": "John Doe",
+  "birthDate": "1990-01-01",
+  "nationalID": "A123456789"
+}</textarea>
+            </div>
+
+            <button onclick="generateCredential()">Generate Credential</button>
+
+            <div id="generateResponse" class="response" style="display:none;">
+                <h3>Response:</h3>
+                <pre id="generateResponseContent"></pre>
+            </div>
+
+            <hr style="margin: 30px 0;">
+
+            <h3>Query Credential</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Credential ID (CID):</label>
+                    <input type="text" id="queryCID" placeholder="e.g., credential-id-123">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button onclick="queryCredential()">Query</button>
+                </div>
+            </div>
+            <div id="queryResponse" class="response" style="display:none;">
+                <h3>Response:</h3>
+                <pre id="queryResponseContent"></pre>
+            </div>
+
+            <hr style="margin: 30px 0;">
+
+            <h3>Manage Credential Status</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Credential ID (CID):</label>
+                    <input type="text" id="statusCID" placeholder="e.g., credential-id-123">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="revokeCredential()">Revoke</button>
+                <button onclick="suspendCredential()">Suspend</button>
+                <button onclick="recoverCredential()">Recover</button>
+            </div>
+            <div id="statusResponse" class="response" style="display:none;">
+                <h3>Response:</h3>
+                <pre id="statusResponseContent"></pre>
+            </div>
+        </div>
+
+        <!-- Verifier Tab -->
+        <div id="verifier" class="tab-content">
+            <h2>Verifiable Presentation Validation</h2>
+
+            <div class="info-box">
+                <strong>Note:</strong> VP validation is not implemented. The API returns placeholder responses.
+            </div>
+
+            <div class="form-group">
+                <label>Presentations (JSON Array):</label>
+                <textarea id="presentations" placeholder='["vp1", "vp2"]'>["eyJhbGciOiJFUzI1NiJ9.presentation1.signature", "eyJhbGciOiJFUzI1NiJ9.presentation2.signature"]</textarea>
+            </div>
+
+            <button onclick="validatePresentations()">Validate Presentations</button>
+
+            <div id="vpResponse" class="response" style="display:none;">
+                <h3>Response:</h3>
+                <pre id="vpResponseContent"></pre>
+            </div>
+        </div>
+
+        <!-- OID4VP Tab -->
+        <div id="oidvp" class="tab-content">
+            <h2>OpenID for Verifiable Presentations</h2>
+
+            <div class="info-box">
+                <strong>Note:</strong> OID4VP verification is not implemented. The API returns placeholder responses.
+            </div>
+
+            <div class="form-group">
+                <label>VP Token:</label>
+                <input type="text" id="vpToken" value="eyJhbGciOiJFUzI1NiJ9.vp.signature" placeholder="JWT VP Token">
+            </div>
+
+            <div class="form-group">
+                <label>Presentation Submission (JSON):</label>
+                <textarea id="presentationSubmission">{"id":"ps1","definition_id":"pd1","descriptor_map":[]}</textarea>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label>Nonce:</label>
+                    <input type="text" id="nonce" value="test-nonce-123" placeholder="Nonce">
+                </div>
+                <div class="form-group">
+                    <label>Client ID:</label>
+                    <input type="text" id="clientID" value="test-client-id" placeholder="Client ID">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Presentation Definition (JSON):</label>
+                <textarea id="presentationDefinition">{"id":"pd1","input_descriptors":[]}</textarea>
+            </div>
+
+            <button onclick="verifyOIDVP()">Verify OID4VP</button>
+
+            <div id="oidvpResponse" class="response" style="display:none;">
+                <h3>Response:</h3>
+                <pre id="oidvpResponseContent"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';  // Same origin
+
+        function switchTab(event, tabName) {
+            // Hide all tabs
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let content of tabContents) {
+                content.classList.remove('active');
+            }
+
+            // Deactivate all tab buttons
+            const tabs = document.getElementsByClassName('tab');
+            for (let tab of tabs) {
+                tab.classList.remove('active');
+            }
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function showResponse(elementId, data, isError = false) {
+            const responseDiv = document.getElementById(elementId);
+            const contentDiv = document.getElementById(elementId + 'Content');
+
+            responseDiv.style.display = 'block';
+            responseDiv.className = isError ? 'response error' : 'response success';
+            contentDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function generateCredential() {
+            try {
+                const credSubject = JSON.parse(document.getElementById('credentialSubject').value);
+                const credType = document.getElementById('credentialType').value;
+
+                const response = await fetch(`${API_BASE}/api/credential`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        credential_type: credType,
+                        credential_subject: credSubject
+                    })
+                });
+
+                const data = await response.json();
+                showResponse('generateResponse', data, !response.ok);
+            } catch (error) {
+                showResponse('generateResponse', {error: error.message}, true);
+            }
+        }
+
+        async function queryCredential() {
+            try {
+                const cid = document.getElementById('queryCID').value;
+                const response = await fetch(`${API_BASE}/api/credential/query?cid=${encodeURIComponent(cid)}`);
+                const data = await response.json();
+                showResponse('queryResponse', data, !response.ok);
+            } catch (error) {
+                showResponse('queryResponse', {error: error.message}, true);
+            }
+        }
+
+        async function revokeCredential() {
+            await updateCredentialStatus('revoke');
+        }
+
+        async function suspendCredential() {
+            await updateCredentialStatus('suspend');
+        }
+
+        async function recoverCredential() {
+            await updateCredentialStatus('recover');
+        }
+
+        async function updateCredentialStatus(action) {
+            try {
+                const cid = document.getElementById('statusCID').value;
+                const response = await fetch(`${API_BASE}/api/credential/${action}?cid=${encodeURIComponent(cid)}`, {
+                    method: 'PUT'
+                });
+                const data = await response.json();
+                showResponse('statusResponse', data, !response.ok);
+            } catch (error) {
+                showResponse('statusResponse', {error: error.message}, true);
+            }
+        }
+
+        async function validatePresentations() {
+            try {
+                const presentations = JSON.parse(document.getElementById('presentations').value);
+                const response = await fetch(`${API_BASE}/api/presentation/validation`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(presentations)
+                });
+                const data = await response.json();
+                showResponse('vpResponse', data, !response.ok);
+            } catch (error) {
+                showResponse('vpResponse', {error: error.message}, true);
+            }
+        }
+
+        async function verifyOIDVP() {
+            try {
+                const request = {
+                    vp_token: document.getElementById('vpToken').value,
+                    presentation_submission: document.getElementById('presentationSubmission').value,
+                    nonce: document.getElementById('nonce').value,
+                    client_id: document.getElementById('clientID').value,
+                    presentation_definition: document.getElementById('presentationDefinition').value
+                };
+
+                const response = await fetch(`${API_BASE}/api/oidvp/verify`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(request)
+                });
+                const data = await response.json();
+                showResponse('oidvpResponse', data, !response.ok);
+            } catch (error) {
+                showResponse('oidvpResponse', {error: error.message}, true);
+            }
+        }
+
+        // Check API health on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                console.log('API Health:', data);
+            } catch (error) {
+                console.error('API is not available:', error);
+                alert('Warning: API server is not responding. Please start the server.');
+            }
+        });
+    </script>
+</body>
+</html>
