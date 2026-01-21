@@ -96,8 +96,71 @@ func (s *Service) Validate(ctx context.Context, presentations []string) (string,
 		}
 	}
 
-	// Validate each VP
-	results, err := s.validateVPs(ctx, presentations)
+	// Detect format of first non-empty presentation to determine processing path
+	if len(presentations) > 0 {
+		// Find first non-empty presentation
+		firstPresentation := ""
+		for _, p := range presentations {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				firstPresentation = trimmed
+				break
+			}
+		}
+
+		// If all presentations are blank, return empty results
+		if firstPresentation == "" {
+			response, _ := json.Marshal([]interface{}{})
+			return string(response), http.StatusOK, nil
+		}
+
+		format, err := models.DetectPresentationFormat(firstPresentation)
+		if err != nil || format == models.FormatUnknown {
+			vpErr := errors.NewVPError(
+				errors.ErrPresInvalidPresentationValidationRequest,
+				"unable to detect presentation format",
+			)
+			response, _ := json.Marshal(vpErr.Response())
+			return string(response), vpErr.HTTPStatus(), vpErr
+		}
+
+		// Dispatch to appropriate validator based on format
+		var results []models.PresentationValidationResponse
+		switch format {
+		case models.FormatW3CJWT:
+			results, err = s.validateW3CVPs(ctx, presentations)
+		case models.FormatISOMDL:
+			results, err = s.validateMDLPresentations(ctx, presentations)
+		default:
+			vpErr := errors.NewVPError(
+				errors.ErrPresInvalidPresentationValidationRequest,
+				"unsupported presentation format",
+			)
+			response, _ := json.Marshal(vpErr.Response())
+			return string(response), vpErr.HTTPStatus(), vpErr
+		}
+
+		if err != nil {
+			if vpErr, ok := err.(*errors.VPError); ok {
+				response, _ := json.Marshal(vpErr.Response())
+				return string(response), vpErr.HTTPStatus(), vpErr
+			}
+			// Unexpected error
+			vpErr := errors.NewVPError(
+				errors.ErrPresValidateVPError,
+				"presentation validation failed",
+			)
+			response, _ := json.Marshal(vpErr.Response())
+			return string(response), vpErr.HTTPStatus(), vpErr
+		}
+
+		// Return successful response
+		response, _ := json.Marshal(results)
+		return string(response), http.StatusOK, nil
+	}
+
+	// Legacy path for empty list (should not reach here due to earlier check)
+	results, err := s.validateW3CVPs(ctx, presentations)
 	if err != nil {
 		if vpErr, ok := err.(*errors.VPError); ok {
 			response, _ := json.Marshal(vpErr.Response())
@@ -119,8 +182,8 @@ func (s *Service) Validate(ctx context.Context, presentations []string) (string,
 	return string(response), http.StatusOK, nil
 }
 
-// validateVPs validates multiple VPs
-func (s *Service) validateVPs(ctx context.Context, presentations []string) ([]models.PresentationValidationResponse, error) {
+// validateW3CVPs validates multiple W3C JWT-VC presentations
+func (s *Service) validateW3CVPs(ctx context.Context, presentations []string) ([]models.PresentationValidationResponse, error) {
 	var results []models.PresentationValidationResponse
 	isArray := len(presentations) > 1
 
@@ -199,6 +262,7 @@ func (s *Service) validateVP(ctx context.Context, presentation string, vpIndex i
 
 	// 5. Return validation response
 	return models.PresentationValidationResponse{
+		Format:                models.FormatW3CJWT.String(),
 		ClientID:              clientID,
 		Nonce:                 nonce,
 		HolderDID:             holderDID,

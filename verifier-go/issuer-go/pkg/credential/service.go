@@ -21,15 +21,17 @@ const (
 // Service handles credential issuance and management
 type Service struct {
 	// Dependencies would go here (repositories, crypto services, etc.)
-	issuerDID string
-	issuerKey string
+	issuerDID    string
+	issuerKey    string
+	seedRegistry *OpaqueIDSeedRegistry
 }
 
 // NewService creates a new credential service
 func NewService(issuerDID, issuerKey string) *Service {
 	return &Service{
-		issuerDID: issuerDID,
-		issuerKey: issuerKey,
+		issuerDID:    issuerDID,
+		issuerKey:    issuerKey,
+		seedRegistry: NewOpaqueIDSeedRegistry(),
 	}
 }
 
@@ -119,16 +121,35 @@ func (s *Service) Generate(ctx context.Context, request *models.CredentialReques
 		// Continue processing
 	}
 
+	// Inject opaque_id_seed for pairwise pseudonymous identifiers
+	// This enables Sybil resistance while maintaining privacy
+	credentialSubjectWithSeed, err := s.seedRegistry.InjectOpaqueIDSeed(
+		request.CredentialSubject,
+		request.CredentialSubjectID, // Use as holderUID
+		request.CredentialType,
+	)
+	if err != nil {
+		vcErr := errors.NewVCError(
+			errors.ErrCredInvalidCredentialSubject,
+			fmt.Sprintf("failed to inject opaque_id_seed: %v", err),
+		)
+		response, _ := json.Marshal(vcErr.Response())
+		return string(response), vcErr.HTTPStatus(), vcErr
+	}
+
 	// In a full implementation, this would:
 	// 1. Load credential policy
 	// 2. Validate against schema
 	// 3. Generate ticket number
-	// 4. Create VC JSON structure
-	// 5. Sign with issuer key
+	// 4. Create VC JSON structure with credentialSubjectWithSeed
+	// 5. Sign with issuer key (SD-JWT encoding for selective disclosure)
 	// 6. Update status list
 	// 7. Save to database
 
 	// For now, return a placeholder response
+	// In production, credentialSubjectWithSeed would be used in VC creation
+	_ = credentialSubjectWithSeed // Mark as used for now
+
 	credentialResponse := &models.CredentialResponseDTO{
 		CID:        fmt.Sprintf("cred-%d", time.Now().Unix()),
 		Credential: "eyJhbGciOiJFUzI1NiJ9.credential.signature",

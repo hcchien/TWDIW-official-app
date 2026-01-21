@@ -1,5 +1,10 @@
 package models
 
+import (
+	"encoding/base64"
+	"strings"
+)
+
 // PresentationValidationRequest represents a request to validate presentations
 type PresentationValidationRequest struct {
 	Presentations []string `json:"presentations"`
@@ -11,6 +16,10 @@ type PresentationValidationResponse struct {
 	Nonce              string                   `json:"nonce,omitempty"`
 	HolderDID          string                   `json:"holder_did,omitempty"`
 	VerifiableCredentials []VerifiableCredentialData `json:"vcs,omitempty"`
+
+	// NEW: Format indicator for multi-format support
+	Format       string            `json:"format,omitempty"` // "w3c_jwt" or "iso_mdl"
+	MDLDocuments []MDLDocumentData `json:"mdl_documents,omitempty"`
 }
 
 // VerifiableCredentialData represents credential data within a VP
@@ -62,4 +71,35 @@ type OIDVPAuthorizationResponse struct {
 // IsSuccess checks if the authorization response is successful
 func (r *OIDVPAuthorizationResponse) IsSuccess() bool {
 	return r.Error == ""
+}
+
+// DetectPresentationFormat detects the format of a presentation (W3C JWT or ISO mDL)
+func DetectPresentationFormat(presentation string) (CredentialFormat, error) {
+	// Try to decode as base64 first
+	decoded, err := base64.StdEncoding.DecodeString(presentation)
+	if err != nil {
+		// If base64 decode fails, try as raw string
+		decoded = []byte(presentation)
+	}
+
+	// Check for JWT pattern: starts with "eyJ" (base64 of "{")
+	if strings.HasPrefix(presentation, "eyJ") {
+		return FormatW3CJWT, nil
+	}
+
+	// Check for CBOR magic bytes
+	if len(decoded) > 0 {
+		firstByte := decoded[0]
+
+		// CBOR map starts with 0xA0-0xBF or 0xDA/0xDB for long maps
+		// CBOR tag starts with 0xC0-0xDF
+		// CBOR major type 5 (map) or tagged value
+		if (firstByte >= 0xA0 && firstByte <= 0xBF) || // Map (major type 5)
+			(firstByte >= 0xC0 && firstByte <= 0xDF) || // Tag (major type 6)
+			firstByte == 0xDA || firstByte == 0xDB {    // Long map
+			return FormatISOMDL, nil
+		}
+	}
+
+	return FormatUnknown, nil
 }

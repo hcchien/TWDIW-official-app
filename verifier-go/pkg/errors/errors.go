@@ -51,6 +51,16 @@ const (
 	ErrDBQueryError  = 78001
 	ErrDBInsertError = 78002
 	ErrDBUpdateError = 78003
+
+	// mDL (ISO 18013-5)
+	ErrMDLInvalidCBORStructure   = 80001
+	ErrMDLInvalidDocType         = 80002
+	ErrMDLInvalidIssuerSignature = 80003
+	ErrMDLInvalidDeviceSignature = 80004
+	ErrMDLInvalidCertificate     = 80005
+	ErrMDLDigestMismatch         = 80006
+	ErrMDLExpired                = 80007
+	ErrMDLUnsupportedProtocol    = 80008
 )
 
 // VPError represents a verifiable presentation error
